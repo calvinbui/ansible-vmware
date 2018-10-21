@@ -1,0 +1,6 @@
+---
+
+- hosts: vcenter
+  roles:
+    - distributed-switch
+  gather_facts: no

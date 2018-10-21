@@ -1,0 +1,7 @@
+---
+
+vcenter_host: vcenter.example.com
+vcenter_username: root
+vcenter_password: root
+vcenter_datacenter_name: Datacenter
+vcenter_uplink_quantity: 4

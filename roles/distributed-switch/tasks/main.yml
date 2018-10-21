@@ -1,0 +1,69 @@
+---
+
+- name: Get pip
+  apt:
+    name: python-pip
+  become: true
+  delegate_to: localhost
+
+- name: Install pyvmomi
+  pip:
+    name: pyvmomi
+    state: present
+  become: true
+  delegate_to: localhost
+
+# 2.7.0 creates a non-standard switch with:
+# - outdated network i/o control
+# - outdated basic lacp
+# - netowrk i/o turned off
+- name: Create Distributed Switch
+  vmware_dvswitch:
+    hostname: "{{ vcenter_host }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    datacenter_name: dc
+    switch_name: DSwitch
+    mtu: 1500
+    uplink_quantity: "{{ vcenter_uplink_quantity }}"
+    discovery_proto: lldp
+    discovery_operation: listen
+    state: present
+    validate_certs: no
+  delegate_to: localhost
+
+- name: Create VLAN Port Groups
+  vmware_dvs_portgroup:
+    hostname: "{{ vcenter_host }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    portgroup_name: "{{ item.name }}"
+    vlan_id: "{{ item.vlan }}"
+    switch_name: DSwitch
+    num_ports: 8
+    portgroup_type: earlyBinding
+    state: present
+    validate_certs: no
+  delegate_to: localhost
+  with_items:
+    - name: "Management"
+      vlan: 10
+    - name: "Userland"
+      vlan: 20
+    - name: "IOT"
+      vlan: 30
+    - name: "Public"
+      vlan: 40
+
+- name: Add Host to Distributed Switch
+  vmware_dvs_host:
+    hostname: "{{ vcenter_host }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    esxi_hostname:
+    switch_name: DSwitch
+    vmnics:
+        - vmnic0
+        - vmnic1
+    state: present
+  delegate_to: localhost
